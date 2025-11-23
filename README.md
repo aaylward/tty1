@@ -43,8 +43,8 @@ The terminal includes several built-in commands. To add your own custom commands
 
 ## Tech Stack
 
-- React 18
+- React
 - TypeScript
-- Vite 6
-- xterm.js 5.5
+- Vite
+- xterm.js
 - FitAddon for responsive terminal sizing
