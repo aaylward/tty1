@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "wrangler pages deploy dist"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
