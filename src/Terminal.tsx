@@ -5,7 +5,7 @@ import { executeCommand } from './commands'
 import '@xterm/xterm/css/xterm.css'
 import './Terminal.css'
 
-const PROMPT = '\r\n$ '
+const PROMPT = '\r\n> '
 
 function Terminal() {
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -15,6 +15,7 @@ function Terminal() {
   const cursorPositionRef = useRef<number>(0)
   const historyRef = useRef<string[]>([])
   const historyIndexRef = useRef<number>(-1)
+  const isProcessingRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (!terminalRef.current) return
@@ -47,12 +48,15 @@ function Terminal() {
     fitAddonRef.current = fitAddon
 
     // Welcome message
-    term.writeln('Web Terminal v1.0.0')
-    term.writeln('Type "help" for available commands')
+    term.writeln('MicroGPT Terminal Agent')
+    term.writeln('Connected to gpt.muchq.com')
+    term.writeln('Type your message to start chatting.')
     term.write(PROMPT)
 
     // Handle terminal input
-    term.onData((data) => {
+    term.onData(async (data) => {
+      if (isProcessingRef.current) return
+
       const code = data.charCodeAt(0)
 
       // Handle special keys
@@ -69,11 +73,18 @@ function Terminal() {
 
         // Execute command
         if (input) {
-          executeCommand(input, {
-            writeLine: (text: string) => term.writeln(text),
-            write: (text: string) => term.write(text),
-            clear: () => term.clear(),
-          })
+          isProcessingRef.current = true
+          try {
+            await executeCommand(input, {
+              writeLine: (text: string) => term.writeln(text),
+              write: (text: string) => term.write(text),
+              clear: () => term.clear(),
+            })
+          } catch (e) {
+            term.writeln(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`)
+          } finally {
+            isProcessingRef.current = false
+          }
         }
 
         currentLineRef.current = ''

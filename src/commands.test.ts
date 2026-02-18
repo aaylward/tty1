@@ -1,11 +1,21 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { executeCommand, getCommands, type CommandContext } from './commands'
+import * as api from './api'
+
+// Mock the api module
+vi.mock('./api', () => ({
+  sendMessage: vi.fn(),
+}))
 
 describe('commands', () => {
   const createMockContext = (): CommandContext => ({
     writeLine: vi.fn(),
     write: vi.fn(),
     clear: vi.fn(),
+  })
+
+  beforeEach(() => {
+    vi.resetAllMocks()
   })
 
   describe('getCommands', () => {
@@ -24,98 +34,56 @@ describe('commands', () => {
   })
 
   describe('executeCommand', () => {
-    it('should execute help command', () => {
+    it('should execute help command', async () => {
       const ctx = createMockContext()
-      executeCommand('help', ctx)
+      await executeCommand('help', ctx)
       expect(ctx.writeLine).toHaveBeenCalled()
     })
 
-    it('should execute clear command', () => {
+    it('should execute clear command', async () => {
       const ctx = createMockContext()
-      executeCommand('clear', ctx)
+      await executeCommand('clear', ctx)
       expect(ctx.clear).toHaveBeenCalled()
     })
 
-    it('should execute echo command', () => {
+    it('should call sendMessage for unknown commands', async () => {
       const ctx = createMockContext()
-      executeCommand('echo hello world', ctx)
-      expect(ctx.writeLine).toHaveBeenCalledWith('hello world')
+      vi.mocked(api.sendMessage).mockResolvedValue('Response from LLM')
+
+      await executeCommand('hello world', ctx)
+
+      expect(api.sendMessage).toHaveBeenCalledWith('hello world')
+      expect(ctx.writeLine).toHaveBeenCalledWith('Response from LLM')
     })
 
-    it('should execute date command', () => {
+    it('should handle sendMessage errors', async () => {
       const ctx = createMockContext()
-      executeCommand('date', ctx)
-      expect(ctx.writeLine).toHaveBeenCalled()
+      vi.mocked(api.sendMessage).mockRejectedValue(new Error('Network error'))
+
+      await executeCommand('hello', ctx)
+
+      expect(ctx.writeLine).toHaveBeenCalledWith('Error: Network error')
     })
 
-    it('should execute whoami command', () => {
+    it('should handle empty input', async () => {
       const ctx = createMockContext()
-      executeCommand('whoami', ctx)
-      expect(ctx.writeLine).toHaveBeenCalledWith('guest')
-    })
-
-    it('should execute uname command', () => {
-      const ctx = createMockContext()
-      executeCommand('uname', ctx)
-      expect(ctx.writeLine).toHaveBeenCalled()
-    })
-
-    it('should execute calc command with valid expression', () => {
-      const ctx = createMockContext()
-      executeCommand('calc 2 + 2', ctx)
-      expect(ctx.writeLine).toHaveBeenCalledWith('2 + 2 = 4')
-    })
-
-    it('should handle calc command with invalid expression', () => {
-      const ctx = createMockContext()
-      executeCommand('calc invalid', ctx)
-      expect(ctx.writeLine).toHaveBeenCalledWith('Error: Invalid expression')
-    })
-
-    it('should execute random command', () => {
-      const ctx = createMockContext()
-      executeCommand('random', ctx)
-      expect(ctx.writeLine).toHaveBeenCalled()
-    })
-
-    it('should execute random command with range', () => {
-      const ctx = createMockContext()
-      executeCommand('random 1 10', ctx)
-      expect(ctx.writeLine).toHaveBeenCalled()
-      const output = (ctx.writeLine as ReturnType<typeof vi.fn>).mock.calls[0][0]
-      const num = parseInt(output)
-      expect(num).toBeGreaterThanOrEqual(1)
-      expect(num).toBeLessThanOrEqual(10)
-    })
-
-    it('should execute lorem command', () => {
-      const ctx = createMockContext()
-      executeCommand('lorem', ctx)
-      expect(ctx.writeLine).toHaveBeenCalled()
-    })
-
-    it('should handle unknown command', () => {
-      const ctx = createMockContext()
-      executeCommand('unknown', ctx)
-      expect(ctx.writeLine).toHaveBeenCalledWith('Command not found: unknown')
-    })
-
-    it('should handle empty input', () => {
-      const ctx = createMockContext()
-      executeCommand('', ctx)
+      await executeCommand('', ctx)
       expect(ctx.writeLine).not.toHaveBeenCalled()
+      expect(api.sendMessage).not.toHaveBeenCalled()
     })
 
-    it('should handle whitespace-only input', () => {
+    it('should handle whitespace-only input', async () => {
       const ctx = createMockContext()
-      executeCommand('   ', ctx)
+      await executeCommand('   ', ctx)
       expect(ctx.writeLine).not.toHaveBeenCalled()
+      expect(api.sendMessage).not.toHaveBeenCalled()
     })
 
-    it('should be case-insensitive', () => {
+    it('should be case-insensitive for commands', async () => {
       const ctx = createMockContext()
-      executeCommand('HELP', ctx)
+      await executeCommand('HELP', ctx)
       expect(ctx.writeLine).toHaveBeenCalled()
+      expect(api.sendMessage).not.toHaveBeenCalled()
     })
   })
 })
