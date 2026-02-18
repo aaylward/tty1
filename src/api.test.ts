@@ -16,7 +16,7 @@ describe('sendMessage', () => {
 
     await sendMessage('hello')
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/microgpt/v1/chat', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith('https://gpt.muchq.com/microgpt/v1/chat', expect.objectContaining({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

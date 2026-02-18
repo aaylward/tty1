@@ -1,6 +1,6 @@
 export async function sendMessage(message: string): Promise<string> {
   try {
-    const response = await fetch('/api/microgpt/v1/chat', {
+    const response = await fetch('https://gpt.muchq.com/microgpt/v1/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
